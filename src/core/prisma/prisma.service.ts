@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaPostgresAdapter } from '@prisma/adapter-ppg'
-import { PrismaClient } from '@prisma/client/extension'
+import { PrismaClient } from '@prisma/client'
 
 @Injectable()
 export class PrismaService extends PrismaClient {
@@ -8,7 +8,7 @@ export class PrismaService extends PrismaClient {
 		const adapter = new PrismaPostgresAdapter({
 			connectionString: process.env.DATABASE_URL!
 		})
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
 		super({ adapter })
 	}
 }
