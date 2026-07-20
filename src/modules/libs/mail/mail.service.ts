@@ -1,9 +1,11 @@
 import { MailerService } from '@nestjs-modules/mailer'
-import { Injectable } from '@nestjs/common'
+import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { render } from 'react-email'
+import { SessionMetadata } from 'src/shared/types/session-metadata.types'
 
-import { VerificationTemplate } from './templates/verification.template'
+import { PasswordRecoveryTemplate } from './templates/password-recovery.template'
+import { VerificationTemplateProps } from './templates/verification.template'
 
 @Injectable()
 export class MailService {
@@ -14,11 +16,29 @@ export class MailService {
 
 	public async sendVerificationToken(email: string, token: string) {
 		const domain = this.configService.getOrThrow<string>('ALLOWED_ORIGIN')
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-		const html = await render(VerificationTemplate({ domain, token }))
+		if (!domain) {
+			throw new InternalServerErrorException('Domain not found')
+		}
+
+		const html = await render(VerificationTemplateProps({ domain, token }))
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		return this.sendMail(email, 'Verify Your Email', html)
+	}
+
+	public async sendPasswordResetToken(
+		email: string,
+		token: string,
+		metadata: SessionMetadata
+	) {
+		const domain = this.configService.getOrThrow<string>('ALLOWED_ORIGIN')
+
+		const html = await render(
+			PasswordRecoveryTemplate({ domain, token, metadata })
+		)
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		return this.sendMail(email, 'Account Recovery', html)
 	}
 
 	private sendMail(email: string, subject: string, html: string) {
