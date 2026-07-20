@@ -7,7 +7,7 @@ interface VerificationTemplateProps {
     token: string
 }
 
-export function VerificationTemplate({domain, token}:VerificationTemplateProps) {
+export function VerificationTemplateProps({domain, token}:VerificationTemplateProps) {
     
     const verificationLink = `${domain}/account/verify?token=${token}`
 
@@ -29,10 +29,10 @@ export function VerificationTemplate({domain, token}:VerificationTemplateProps) 
                         </Link>
                     </Section>
                     <Section className='text-center mt-8'>
-                        <Text className='text-sm text-gray-600'>
+                        <Text className='text-sm text-black'>
                             If you did not create this account, please ignore this email.
                         </Text>
-                        <Text className='text-sm text-gray-600'>
+                        <Text className='text-sm text-black'>
                             Thanks, <br/>
                             The Kick Team
                         </Text>

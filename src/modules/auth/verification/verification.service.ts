@@ -41,6 +41,12 @@ export class VerificationService {
 		const hasExpired = new Date(existingToken.expiresIn) < new Date()
 
 		if (hasExpired) {
+			await this.prismaService.token.delete({
+				where: {
+					id: existingToken.id
+				}
+			})
+
 			throw new BadRequestException('Token has expired')
 		}
 
