@@ -1,10 +1,10 @@
 import { ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
+import { RedisStore } from 'connect-redis'
 import cookieParser from 'cookie-parser'
 import session from 'express-session'
 
-import { RedisStore } from './../node_modules/connect-redis/index'
 import { CoreModule } from './core.module'
 import { RedisService } from './core/redis/redis.service'
 import { parseBoolean } from './shared/utils/parse-boolean'
@@ -15,7 +15,6 @@ async function bootstrap() {
 	const config = app.get(ConfigService)
 	const redis = app.get(RedisService)
 
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 	app.use(cookieParser(config.getOrThrow<string>('COOKIES_SECRET')))
 
 	app.useGlobalPipes(
@@ -25,7 +24,6 @@ async function bootstrap() {
 	)
 
 	app.use(
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		session({
 			secret: config.getOrThrow<string>('SESSION_SECRET'),
 			name: config.getOrThrow<string>('SESSION_NAME'),
