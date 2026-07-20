@@ -6,14 +6,14 @@ export function getMailerConfig(configService: ConfigService): MailerOptions {
 		transport: {
 			host: configService.getOrThrow<string>('MAIL_HOST'),
 			port: configService.getOrThrow<number>('MAIL_PORT'),
-			secure: false,
+			secure: true,
 			auth: {
 				user: configService.getOrThrow<string>('MAIL_LOGIN'),
 				pass: configService.getOrThrow<string>('MAIL_PASSWORD')
 			}
 		},
 		defaults: {
-			from: `"KICK " ${configService.getOrThrow<string>('MAIL_LOGIN')}`
+			from: `"KICK" <hello@${configService.getOrThrow<string>('MAIL_FROM')}>`
 		}
 	}
 }
