@@ -7,10 +7,14 @@ import { hash } from 'argon2'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 
 import { CreateUserInput } from '../input/create-user.input'
+import { VerificationService } from '../verification/verification.service'
 
 @Injectable()
 export class AccountService {
-	public constructor(private readonly prismaService: PrismaService) {}
+	public constructor(
+		private readonly prismaService: PrismaService,
+		private readonly verificationService: VerificationService
+	) {}
 
 	public async me(id: string) {
 		const user = await this.prismaService.user.findUnique({
@@ -49,7 +53,7 @@ export class AccountService {
 			throw new ConflictException('Email already exist')
 		}
 
-		await this.prismaService.user.create({
+		const user = await this.prismaService.user.create({
 			data: {
 				username,
 				email,
@@ -57,6 +61,8 @@ export class AccountService {
 				displayName: username
 			}
 		})
+
+		await this.verificationService.sendVerificationToken(user)
 
 		return true
 	}
