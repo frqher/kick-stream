@@ -13,9 +13,7 @@ export async function genereateToken(
 	if (isUUID) {
 		token = uuidv4()
 	} else {
-		token = Math.floor(
-			Math.random() * (100000 - 100000) + 100000
-		).toString()
+		token = Math.floor(Math.random() * 900000 + 100000).toString()
 	}
 
 	const expiresIn = new Date(new Date().getTime() + 300000)
