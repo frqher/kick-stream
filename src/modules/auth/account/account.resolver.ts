@@ -5,7 +5,7 @@ import { Authorized } from 'src/shared/decorators/authorized.decorator'
 import { CreateUserInput } from '../input/create-user.input'
 
 import { AccountService } from './account.service'
-import { UserModel } from './models/user.mode'
+import { UserModel } from './models/user.model'
 
 @Resolver('Account')
 export class AccountResolver {

@@ -8,6 +8,7 @@ import { PrismaModule } from './core/prisma/prisma.module'
 import { RedisModule } from './core/redis/redis.module'
 import { AccountModule } from './modules/auth/account/account.module'
 import { PasswordRecoveryModule } from './modules/auth/password-recovery/password-recovery.module'
+import { TotpModule } from './modules/auth/totp/totp.module'
 import { VerificationModule } from './modules/auth/verification/verification.module'
 import { MailModule } from './modules/libs/mail/mail.module'
 import { SessionModule } from './session/session.module'
@@ -31,7 +32,8 @@ import { IS_DEV_ENV } from './shared/utils/is-dev.util'
 		SessionModule,
 		MailModule,
 		VerificationModule,
-		PasswordRecoveryModule
+		PasswordRecoveryModule,
+		TotpModule
 	]
 })
 export class CoreModule {}
