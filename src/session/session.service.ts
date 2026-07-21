@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { verify } from 'argon2'
 import type { Request } from 'express'
+import { TOTP } from 'otpauth'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { RedisService } from 'src/core/redis/redis.service'
 import { VerificationService } from 'src/modules/auth/verification/verification.service'
@@ -84,7 +85,7 @@ export class SessionService {
 	}
 
 	public async login(req: Request, input: LoginInput, userAgent: string) {
-		const { login, password } = input
+		const { login, password, pin } = input
 
 		const user = await this.prismaService.user.findFirst({
 			where: {
@@ -109,9 +110,36 @@ export class SessionService {
 			)
 		}
 
+		if (user.isTotpEnabled) {
+			if (!pin || !user.totpSecret) {
+				return {
+					message: 'PIN is required for 2FA'
+				}
+			}
+
+			const totp = new TOTP({
+				issuer: 'KickStream',
+				label: `${user.email}`,
+				algorithm: 'SHA1',
+				digits: 6,
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				secret: user.totpSecret
+			})
+
+			const delta = totp.validate({ token: pin })
+			if (delta === null) {
+				return {
+					message: 'Invalid 6-digit code'
+				}
+			}
+		}
+
 		const metadata = getSessionMetadata(req, userAgent)
 
-		return saveSession(req, user, metadata)
+		return {
+			user: await saveSession(req, user, metadata),
+			message: 'Login successful'
+		}
 	}
 
 	public async logout(req: Request) {
