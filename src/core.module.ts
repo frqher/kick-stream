@@ -7,6 +7,7 @@ import { getGraphQLConfig } from './core/config/graphql.config'
 import { PrismaModule } from './core/prisma/prisma.module'
 import { RedisModule } from './core/redis/redis.module'
 import { AccountModule } from './modules/auth/account/account.module'
+import { DeactivateModule } from './modules/auth/deactivate/deactivate.module'
 import { PasswordRecoveryModule } from './modules/auth/password-recovery/password-recovery.module'
 import { TotpModule } from './modules/auth/totp/totp.module'
 import { VerificationModule } from './modules/auth/verification/verification.module'
@@ -33,7 +34,8 @@ import { IS_DEV_ENV } from './shared/utils/is-dev.util'
 		MailModule,
 		VerificationModule,
 		PasswordRecoveryModule,
-		TotpModule
+		TotpModule,
+		DeactivateModule
 	]
 })
 export class CoreModule {}

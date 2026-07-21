@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import { render } from 'react-email'
 import { SessionMetadata } from 'src/shared/types/session-metadata.types'
 
+import { DeactiveTemplate } from './templates/deactive.template'
 import { PasswordRecoveryTemplate } from './templates/password-recovery.template'
 import { VerificationTemplateProps } from './templates/verification.template'
 
@@ -39,6 +40,17 @@ export class MailService {
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		return this.sendMail(email, 'Account Recovery', html)
+	}
+
+	public async sendDeactivationToken(
+		email: string,
+		token: string,
+		metadata: SessionMetadata
+	) {
+		const html = await render(DeactiveTemplate({ token, metadata }))
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		return this.sendMail(email, 'Account Deactivation', html)
 	}
 
 	private sendMail(email: string, subject: string, html: string) {
