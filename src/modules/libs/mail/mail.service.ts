@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import { render } from 'react-email'
 import { SessionMetadata } from 'src/shared/types/session-metadata.types'
 
+import { AccountDeletionTemplate } from './templates/account-deletion.template'
 import { DeactiveTemplate } from './templates/deactive.template'
 import { PasswordRecoveryTemplate } from './templates/password-recovery.template'
 import { VerificationTemplateProps } from './templates/verification.template'
@@ -51,6 +52,17 @@ export class MailService {
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		return this.sendMail(email, 'Account Deactivation', html)
+	}
+
+	public async sendAccountDeletion(email: string, username: string) {
+		const html = await render(AccountDeletionTemplate({ username }))
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		return this.sendMail(
+			email,
+			'Your Kick Account Has Been Permanently Deleted',
+			html
+		)
 	}
 
 	private sendMail(email: string, subject: string, html: string) {
