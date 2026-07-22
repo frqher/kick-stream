@@ -1,6 +1,7 @@
 import { Field, InputType } from '@nestjs/graphql'
 import {
 	IsNotEmpty,
+	IsOptional,
 	IsString,
 	Length,
 	MaxLength,
@@ -23,7 +24,7 @@ export class LoginInput {
 
 	@Field(() => String, { nullable: true })
 	@IsString()
-	@IsNotEmpty()
+	@IsOptional()
 	@Length(6, 6)
 	public pin?: string
 }
