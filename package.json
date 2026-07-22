@@ -48,6 +48,7 @@
 		"express-session": "^1.19.0",
 		"geoip-lite": "^2.0.3",
 		"graphql": "^17.0.2",
+		"graphql-upload": "14",
 		"hi-base32": "^0.5.1",
 		"i18n-iso-countries": "^7.14.0",
 		"ioredis": "^5.11.1",
@@ -60,7 +61,8 @@
 		"react-email": "6.9.0",
 		"redis": "^6.1.0",
 		"reflect-metadata": "^0.2.2",
-		"rxjs": "^7.8.1"
+		"rxjs": "^7.8.1",
+		"sharp": "^0.35.3"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.2.0",
@@ -71,6 +73,7 @@
 		"@trivago/prettier-plugin-sort-imports": "^6.0.2",
 		"@types/express": "^5.0.0",
 		"@types/geoip-lite": "^1.4.4",
+		"@types/graphql-upload": "^17.0.0",
 		"@types/jest": "^30.0.0",
 		"@types/node": "^24.0.0",
 		"@types/qrcode": "^1.5.6",
