@@ -16,6 +16,7 @@ import { MailModule } from './modules/libs/mail/mail.module'
 import { StorageModule } from './modules/libs/storage/storage.module'
 import { SessionModule } from './session/session.module'
 import { IS_DEV_ENV } from './shared/utils/is-dev.util'
+import { ProfileModule } from './modules/auth/profile/profile.module';
 
 @Module({
 	imports: [
@@ -39,7 +40,8 @@ import { IS_DEV_ENV } from './shared/utils/is-dev.util'
 		TotpModule,
 		DeactivateModule,
 		CronModule,
-		StorageModule
+		StorageModule,
+		ProfileModule
 	]
 })
 export class CoreModule {}
