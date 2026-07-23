@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { GraphQLModule } from '@nestjs/graphql'
 
 import { getGraphQLConfig } from './core/config/graphql.config'
+import { getLiveKitConfig } from './core/config/livekit.config'
 import { PrismaModule } from './core/prisma/prisma.module'
 import { RedisModule } from './core/redis/redis.module'
 import { AccountModule } from './modules/auth/account/account.module'
@@ -13,8 +14,10 @@ import { ProfileModule } from './modules/auth/profile/profile.module'
 import { TotpModule } from './modules/auth/totp/totp.module'
 import { VerificationModule } from './modules/auth/verification/verification.module'
 import { CronModule } from './modules/cron/cron.module'
+import { LivekitModule } from './modules/libs/livekit/livekit.module'
 import { MailModule } from './modules/libs/mail/mail.module'
 import { StorageModule } from './modules/libs/storage/storage.module'
+import { IngressModule } from './modules/stream/ingress/ingress.module'
 import { StreamModule } from './modules/stream/stream.module'
 import { SessionModule } from './session/session.module'
 import { IS_DEV_ENV } from './shared/utils/is-dev.util'
@@ -43,7 +46,13 @@ import { IS_DEV_ENV } from './shared/utils/is-dev.util'
 		CronModule,
 		StorageModule,
 		ProfileModule,
-		StreamModule
+		StreamModule,
+		LivekitModule.registerAync({
+			imports: [ConfigModule],
+			useFactory: getLiveKitConfig,
+			inject: [ConfigService]
+		}),
+		IngressModule
 	]
 })
 export class CoreModule {}
