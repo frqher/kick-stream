@@ -9,14 +9,15 @@ import { RedisModule } from './core/redis/redis.module'
 import { AccountModule } from './modules/auth/account/account.module'
 import { DeactivateModule } from './modules/auth/deactivate/deactivate.module'
 import { PasswordRecoveryModule } from './modules/auth/password-recovery/password-recovery.module'
+import { ProfileModule } from './modules/auth/profile/profile.module'
 import { TotpModule } from './modules/auth/totp/totp.module'
 import { VerificationModule } from './modules/auth/verification/verification.module'
 import { CronModule } from './modules/cron/cron.module'
 import { MailModule } from './modules/libs/mail/mail.module'
 import { StorageModule } from './modules/libs/storage/storage.module'
+import { StreamModule } from './modules/stream/stream.module'
 import { SessionModule } from './session/session.module'
 import { IS_DEV_ENV } from './shared/utils/is-dev.util'
-import { ProfileModule } from './modules/auth/profile/profile.module';
 
 @Module({
 	imports: [
@@ -41,7 +42,8 @@ import { ProfileModule } from './modules/auth/profile/profile.module';
 		DeactivateModule,
 		CronModule,
 		StorageModule,
-		ProfileModule
+		ProfileModule,
+		StreamModule
 	]
 })
 export class CoreModule {}
