@@ -13,6 +13,7 @@ import { PasswordRecoveryModule } from './modules/auth/password-recovery/passwor
 import { ProfileModule } from './modules/auth/profile/profile.module'
 import { TotpModule } from './modules/auth/totp/totp.module'
 import { VerificationModule } from './modules/auth/verification/verification.module'
+import { CategoryModule } from './modules/category/category.module'
 import { CronModule } from './modules/cron/cron.module'
 import { LivekitModule } from './modules/libs/livekit/livekit.module'
 import { MailModule } from './modules/libs/mail/mail.module'
@@ -54,7 +55,8 @@ import { IS_DEV_ENV } from './shared/utils/is-dev.util'
 			inject: [ConfigService]
 		}),
 		IngressModule,
-		WebhookModule
+		WebhookModule,
+		CategoryModule
 	]
 })
 export class CoreModule {}

@@ -38,7 +38,8 @@ export class StreamService {
 				...whereClause
 			},
 			include: {
-				user: true
+				user: true,
+				category: true
 			},
 			orderBy: {
 				createdAt: 'desc'
@@ -68,7 +69,7 @@ export class StreamService {
 		const randoms = Array.from(randomIndexes).map(index =>
 			this.prismaService.stream.findFirst({
 				where: { user: { isDeactivated: false } },
-				include: { user: true },
+				include: { user: true, category: true },
 				skip: index
 			})
 		)
@@ -79,14 +80,19 @@ export class StreamService {
 	}
 
 	public async changeInfo(user: User, input: ChangeStreamInfoInput) {
-		const { title } = input
+		const { title, categoryId } = input
 
 		await this.prismaService.stream.update({
 			where: {
 				userId: user.id
 			},
 			data: {
-				title
+				title,
+				category: {
+					connect: {
+						id: categoryId
+					}
+				}
 			}
 		})
 
