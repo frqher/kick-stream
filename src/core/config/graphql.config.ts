@@ -12,6 +12,7 @@ export function getGraphQLConfig(
 		autoSchemaFile: join(process.cwd(), 'src/core/graphql/schema.gql'),
 		sortSchema: true,
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		context: ({ req, res }) => ({ req, res })
+		context: ({ req, res }) => ({ req, res }),
+		installSubscriptionHandlers: true
 	}
 }
