@@ -2,7 +2,7 @@ import { TokenType, type User } from '@prisma/client'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { v4 as uuidv4 } from 'uuid'
 
-export async function genereateToken(
+export async function generateToken(
 	prismaService: PrismaService,
 	user: User,
 	type: TokenType,

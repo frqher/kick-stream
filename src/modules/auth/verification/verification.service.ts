@@ -7,7 +7,7 @@ import { TokenType, User } from '@prisma/client'
 import { Request } from 'express'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { MailService } from 'src/modules/libs/mail/mail.service'
-import { genereateToken } from 'src/shared/utils/generate-token.util'
+import { generateToken } from 'src/shared/utils/generate-token.util'
 import { getSessionMetadata } from 'src/shared/utils/session-metadata.util'
 import { saveSession } from 'src/shared/utils/session.util'
 
@@ -75,7 +75,7 @@ export class VerificationService {
 	}
 
 	public async sendVerificationToken(user: User) {
-		const verificationToken = await genereateToken(
+		const verificationToken = await generateToken(
 			this.prismaService,
 			user,
 			TokenType.EMAIL_VERIFY,
