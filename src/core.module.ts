@@ -24,6 +24,7 @@ import { StreamModule } from './modules/stream/stream.module'
 import { WebhookModule } from './modules/webhook/webhook.module'
 import { SessionModule } from './session/session.module'
 import { IS_DEV_ENV } from './shared/utils/is-dev.util'
+import { FollowModule } from './modules/follow/follow.module';
 
 @Module({
 	imports: [
@@ -58,7 +59,8 @@ import { IS_DEV_ENV } from './shared/utils/is-dev.util'
 		IngressModule,
 		WebhookModule,
 		CategoryModule,
-		ChatModule
+		ChatModule,
+		FollowModule
 	]
 })
 export class CoreModule {}
