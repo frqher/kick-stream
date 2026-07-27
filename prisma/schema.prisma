@@ -27,10 +27,13 @@ model User {
   isDeactivated Boolean   @default(false) @map("is_deactivated")
   deactivateAt  DateTime? @map("deactivate_at")
 
-  tokens      Token[]
-  socialLinks SocialLink[]
-  stream      Stream?
+  tokens       Token[]
+  socialLinks  SocialLink[]
+  stream       Stream?
   chatMessages ChatMessage[]
+
+  followers  Follow[] @relation(name: "followers")
+  followings Follow[] @relation(name: "followings")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -66,17 +69,17 @@ model Stream {
 
   isLive Boolean @default(false) @map("is_live")
 
-  isChatEnabled Boolean @default(true) @map("is_chat_enabled")
-  isChatFollowersOnly Boolean @default(false) @map("is_chat_followers_only")
+  isChatEnabled         Boolean @default(true) @map("is_chat_enabled")
+  isChatFollowersOnly   Boolean @default(false) @map("is_chat_followers_only")
   isChatSubscribersOnly Boolean @default(false) @map("is_chat_subscribers_only")
-  
+
   chatMessages ChatMessage[]
 
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String? @unique @map("user_id")
 
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  categoryId String? @map("category_id")
+  categoryId String?   @map("category_id")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -84,16 +87,15 @@ model Stream {
   @@map("streams")
 }
 
-
 model ChatMessage {
   id String @id @default(uuid())
 
   text String
- 
+
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String @map("user_id")
-  
-  stream   Stream   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  stream   Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
   streamId String @map("stream_id")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -101,7 +103,6 @@ model ChatMessage {
 
   @@map("chat_messages")
 }
-
 
 model Category {
   id String @id @default(uuid())
@@ -117,6 +118,24 @@ model Category {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("categories")
+}
+
+model Follow {
+  id String @id @default(uuid())
+
+  follower   User   @relation("followers", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId String @map("follower_id")
+
+  following   User   @relation("followings", fields: [followingId], references: [id], onDelete: Cascade)
+  followingId String @map("following_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@index([followerId])
+  @@map("follows")
 }
 
 model Token {
