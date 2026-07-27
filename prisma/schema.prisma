@@ -18,6 +18,8 @@ model User {
   avatar String?
   bio    String?
 
+  telegramId String? @map("telegram_id")
+
   isVerified      Boolean @default(false) @map("is_verifed")
   isEmailVerified Boolean @default(false) @map("is_email_verifed")
   isTotpEnabled   Boolean @default(false) @map("is_totp_enabled")
@@ -27,10 +29,12 @@ model User {
   isDeactivated Boolean   @default(false) @map("is_deactivated")
   deactivateAt  DateTime? @map("deactivate_at")
 
-  tokens       Token[]
-  socialLinks  SocialLink[]
-  stream       Stream?
-  chatMessages ChatMessage[]
+  tokens               Token[]
+  socialLinks          SocialLink[]
+  stream               Stream?
+  chatMessages         ChatMessage[]
+  notificationSettings NotificationSettings?
+  notifications        Notification[]
 
   followers  Follow[] @relation(name: "followers")
   followings Follow[] @relation(name: "followings")
@@ -75,8 +79,8 @@ model Stream {
 
   chatMessages ChatMessage[]
 
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String? @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique @map("user_id")
 
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId String?   @map("category_id")
@@ -138,6 +142,47 @@ model Follow {
   @@map("follows")
 }
 
+model Notification {
+  id String @id @default(uuid())
+
+  message String
+  type    NotificationType
+  isRead  Boolean          @default(false) @map("is_read")
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String? @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("notifications")
+}
+
+model NotificationSettings {
+  id String @id @default(uuid())
+
+  siteNotifications     Boolean @default(true) @map("site_notifications")
+  telegramNotifications Boolean @default(true) @map("telegram_notifications")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_settings")
+}
+
+enum NotificationType {
+  STREAM_START
+  NEW_FOLLOWER
+  NEW_SPONSORSHIP
+  ENABLE_TWO_FACTOR
+  VERIFIED_CHANNEL
+
+  @@map("notification_types")
+}
+
 model Token {
   id String @id @default(uuid())
 
@@ -158,6 +203,7 @@ enum TokenType {
   EMAIL_VERIFY
   PASSWORD_RESET
   DEACTIVE_ACCOUNT
+  TELEGRAM_AUTH
 
   @@map("token_types")
 }

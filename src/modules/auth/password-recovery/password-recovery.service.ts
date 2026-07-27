@@ -9,7 +9,7 @@ import { hash } from 'argon2'
 import type { Request } from 'express'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { MailService } from 'src/modules/libs/mail/mail.service'
-import { genereateToken } from 'src/shared/utils/generate-token.util'
+import { generateToken } from 'src/shared/utils/generate-token.util'
 import { getSessionMetadata } from 'src/shared/utils/session-metadata.util'
 
 import { NewPasswordInput } from './inputs/new-password.input'
@@ -45,10 +45,10 @@ export class PasswordRecoveryService {
 			)
 		}
 
-		const resetToken = await genereateToken(
+		const resetToken = await generateToken(
 			this.prismaService,
 			user,
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
 			TokenType.PASSWORD_RESET,
 			true
 		)
@@ -69,7 +69,7 @@ export class PasswordRecoveryService {
 		const existingToken = await this.prismaService.token.findFirst({
 			where: {
 				token,
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 				type: TokenType.PASSWORD_RESET
 			}
 		})

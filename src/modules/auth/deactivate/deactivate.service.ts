@@ -9,7 +9,7 @@ import { verify } from 'argon2'
 import type { Request } from 'express'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { MailService } from 'src/modules/libs/mail/mail.service'
-import { genereateToken } from 'src/shared/utils/generate-token.util'
+import { generateToken } from 'src/shared/utils/generate-token.util'
 import { getSessionMetadata } from 'src/shared/utils/session-metadata.util'
 import { destroySession } from 'src/shared/utils/session.util'
 
@@ -54,7 +54,7 @@ export class DeactivateService {
 		const existingToken = await this.prismaService.token.findFirst({
 			where: {
 				token,
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 				type: TokenType.DEACTIVE_ACCOUNT
 			}
 		})
@@ -103,10 +103,10 @@ export class DeactivateService {
 		user: User,
 		userAgent: string
 	) {
-		const deactivationToken = await genereateToken(
+		const deactivationToken = await generateToken(
 			this.prismaService,
 			user,
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
 			TokenType.DEACTIVE_ACCOUNT
 		)
 

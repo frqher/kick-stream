@@ -6,9 +6,14 @@ import {
 import type { User } from '@prisma/client'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 
+import { NotificationService } from '../notification/notification.service'
+
 @Injectable()
 export class FollowService {
-	public constructor(private readonly prismaService: PrismaService) {}
+	public constructor(
+		private readonly prismaService: PrismaService,
+		private readonly notificationService: NotificationService
+	) {}
 
 	public async findMyFollowers(user: User) {
 		const followers = await this.prismaService.follow.findMany({
@@ -65,12 +70,27 @@ export class FollowService {
 			throw new ConflictException('Already following')
 		}
 
-		await this.prismaService.follow.create({
+		const follow = await this.prismaService.follow.create({
 			data: {
 				followerId: user.id,
 				followingId: channel.id
+			},
+			include: {
+				following: {
+					include: {
+						notificationSettings: true
+					}
+				},
+				follower: true
 			}
 		})
+
+		if (follow.following.notificationSettings?.siteNotifications) {
+			await this.notificationService.createNewFollowing(
+				follow.following.id,
+				follow.follower
+			)
+		}
 
 		return true
 	}
