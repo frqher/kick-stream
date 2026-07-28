@@ -27,6 +27,7 @@ import { StreamModule } from './modules/stream/stream.module'
 import { WebhookModule } from './modules/webhook/webhook.module'
 import { SessionModule } from './session/session.module'
 import { IS_DEV_ENV } from './shared/utils/is-dev.util'
+import { TelegramModule } from './modules/libs/telegram/telegram.module';
 
 @Module({
 	imports: [
@@ -64,7 +65,8 @@ import { IS_DEV_ENV } from './shared/utils/is-dev.util'
 		ChatModule,
 		FollowModule,
 		ChannelModule,
-		NotificationModule
+		NotificationModule,
+		TelegramModule
 	]
 })
 export class CoreModule {}

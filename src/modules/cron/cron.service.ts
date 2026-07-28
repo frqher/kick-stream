@@ -4,13 +4,15 @@ import { PrismaService } from 'src/core/prisma/prisma.service'
 
 import { MailService } from '../libs/mail/mail.service'
 import { StorageService } from '../libs/storage/storage.service'
+import { TelegramService } from '../libs/telegram/telegram.service'
 
 @Injectable()
 export class CronService {
 	public constructor(
 		private readonly prismaService: PrismaService,
 		private readonly mailService: MailService,
-		private readonly storageService: StorageService
+		private readonly storageService: StorageService,
+		private readonly telegramService: TelegramService
 	) {}
 
 	@Cron('0 0 * * *')
@@ -24,6 +26,10 @@ export class CronService {
 				deactivateAt: {
 					lte: sevenDaysAgo
 				}
+			},
+			include: {
+				notificationSettings: true,
+				stream: true
 			}
 		})
 
@@ -37,6 +43,19 @@ export class CronService {
 
 			if (user.avatar) {
 				void this.storageService.remove(user.avatar)
+			}
+			if (user.stream?.thumbnailUrl) {
+				void this.storageService.remove(user.stream.thumbnailUrl)
+			}
+
+			if (
+				user.notificationSettings?.telegramNotifications &&
+				user.telegramId
+			) {
+				await this.telegramService.sendAccountDeletedNotification(
+					user.telegramId,
+					user.username
+				)
 			}
 		}
 
