@@ -5,6 +5,7 @@ import {
 	HttpCode,
 	HttpStatus,
 	Post,
+	RawBody,
 	UnauthorizedException
 } from '@nestjs/common'
 
@@ -31,5 +32,25 @@ export class WebhookController {
 			body,
 			authorization
 		)
+	}
+
+	@Post('stripe')
+	@HttpCode(HttpStatus.OK)
+	public async receiveWebhookStripe(
+		@RawBody() rawBody: string,
+		@Headers('stripe-signature') signature: string
+	) {
+		if (!signature) {
+			throw new UnauthorizedException('Signature header is required')
+		}
+
+		const event = this.webhookService.constructStripeEvent(
+			rawBody,
+			signature
+		)
+
+		await this.webhookService.receiveWebhookStripe(event)
+
+		return true
 	}
 }

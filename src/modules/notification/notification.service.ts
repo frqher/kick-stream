@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { NotificationType, TokenType, type User } from '@prisma/client'
+import {
+	NotificationType,
+	type SponsorshipPlan,
+	TokenType,
+	type User
+} from '@prisma/client'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { generateToken } from 'src/shared/utils/generate-token.util'
 
@@ -66,9 +71,33 @@ export class NotificationService {
 		const notification = await this.prismaService.notification.create({
 			data: {
 				message: `
-					<b>${channel.displayName}</b> started following you
+					<b className='font-medium'>${channel.displayName}</b> started following you
+					<a className='inline-block px-2 py-1 rounded' href="/${channel.username}">Follow</a>
 				`,
 				type: NotificationType.NEW_FOLLOWER,
+				user: {
+					connect: {
+						id: userId
+					}
+				}
+			}
+		})
+
+		return notification
+	}
+
+	public async createNewSponsorship(
+		userId: string,
+		plan: SponsorshipPlan,
+		sponsor: User
+	) {
+		const notification = await this.prismaService.notification.create({
+			data: {
+				message: `
+					<b className='font-medium'>${sponsor.displayName}</b> started sponsoring you
+					<a className='inline-block px-2 py-1 rounded' href="/${sponsor.username}">View subscription</a>
+				`,
+				type: NotificationType.NEW_SPONSORSHIP,
 				user: {
 					connect: {
 						id: userId
@@ -115,7 +144,7 @@ export class NotificationService {
 			const telegramAuthToken = await generateToken(
 				this.prismaService,
 				user,
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
 				TokenType.TELEGRAM_AUTH,
 				true
 			)

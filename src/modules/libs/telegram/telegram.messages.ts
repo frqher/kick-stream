@@ -1,4 +1,4 @@
-import type { User } from '@prisma/client'
+import type { SponsorshipPlan, User } from '@prisma/client'
 import { type SessionMetadata } from 'src/shared/types/session-metadata.types'
 
 export const TelegramMessagess = {
@@ -65,5 +65,26 @@ export const TelegramMessagess = {
 	newFollowing: (follower: User, followersCount: number) =>
 		`🔔 <b>New Follower!</b>\n\n` +
 		`<a href="https://kick.com/${follower.username}">${follower.displayName}</a> started following you.\n\n` +
-		`👥 Total Followers: <b>${followersCount}</b>`
+		`👥 Total Followers: <b>${followersCount}</b>`,
+	newSponsorship: (plan: SponsorshipPlan, sponsor: User) => {
+		const now = new Date()
+		const date = now.toLocaleDateString('en-US', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		})
+		const time = now.toLocaleTimeString('en-US', {
+			hour: '2-digit',
+			minute: '2-digit',
+			hour12: false
+		})
+
+		return (
+			`💛 <b>New Sponsorship!</b>\n\n` +
+			`<a href="https://kick.com/${sponsor.username}">${sponsor.displayName}</a> just subscribed to your channel.\n\n` +
+			`<b>📦 Plan:</b> ${plan.title}\n` +
+			`<b>💵 Price:</b> $${plan.price}/month\n\n` +
+			`🕐 ${date} at ${time}`
+		)
+	}
 }
