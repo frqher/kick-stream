@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { TokenType, type User } from '@prisma/client'
+import { type SponsorshipPlan, TokenType, type User } from '@prisma/client'
 import { Action, Command, Ctx, Start, Update } from 'nestjs-telegraf'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { type SessionMetadata } from 'src/shared/types/session-metadata.types'
@@ -96,9 +96,9 @@ export class TelegramService extends Telegraf {
 		await ctx.replyWithHTML(
 			TelegramMessagess.profile(
 				user,
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+
 				user._count.followers,
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+
 				user._count.followings
 			),
 			TelegramButtons.profile
@@ -193,8 +193,23 @@ export class TelegramService extends Telegraf {
 		}
 		await this.telegram.sendMessage(
 			chatId,
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+
 			TelegramMessagess.newFollowing(follower, user._count.followers),
+			{ parse_mode: 'HTML' }
+		)
+	}
+
+	public async sendNewSponsorship(
+		chatId: string,
+		plan: SponsorshipPlan,
+		sponsor: User
+	) {
+		const user = await this.findUserByChatId(chatId)
+		if (!user) return
+
+		await this.telegram.sendMessage(
+			chatId,
+			TelegramMessagess.newSponsorship(plan, sponsor),
 			{ parse_mode: 'HTML' }
 		)
 	}

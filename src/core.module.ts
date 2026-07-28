@@ -5,6 +5,7 @@ import { GraphQLModule } from '@nestjs/graphql'
 
 import { getGraphQLConfig } from './core/config/graphql.config'
 import { getLiveKitConfig } from './core/config/livekit.config'
+import { getStripeConfig } from './core/config/stripe.config'
 import { PrismaModule } from './core/prisma/prisma.module'
 import { RedisModule } from './core/redis/redis.module'
 import { AccountModule } from './modules/auth/account/account.module'
@@ -21,13 +22,17 @@ import { FollowModule } from './modules/follow/follow.module'
 import { LivekitModule } from './modules/libs/livekit/livekit.module'
 import { MailModule } from './modules/libs/mail/mail.module'
 import { StorageModule } from './modules/libs/storage/storage.module'
+import { StripeModule } from './modules/libs/stripe/stripe.module'
+import { TelegramModule } from './modules/libs/telegram/telegram.module'
 import { NotificationModule } from './modules/notification/notification.module'
+import { PlanModule } from './modules/sponsorship/plan/plan.module'
+import { SubscriptionModule } from './modules/sponsorship/subscription/subscription.module'
+import { TransactionModule } from './modules/sponsorship/transaction/transaction.module'
 import { IngressModule } from './modules/stream/ingress/ingress.module'
 import { StreamModule } from './modules/stream/stream.module'
 import { WebhookModule } from './modules/webhook/webhook.module'
 import { SessionModule } from './session/session.module'
 import { IS_DEV_ENV } from './shared/utils/is-dev.util'
-import { TelegramModule } from './modules/libs/telegram/telegram.module';
 
 @Module({
 	imports: [
@@ -59,6 +64,11 @@ import { TelegramModule } from './modules/libs/telegram/telegram.module';
 			useFactory: getLiveKitConfig,
 			inject: [ConfigService]
 		}),
+		StripeModule.registerAync({
+			imports: [ConfigModule],
+			useFactory: getStripeConfig,
+			inject: [ConfigService]
+		}),
 		IngressModule,
 		WebhookModule,
 		CategoryModule,
@@ -66,7 +76,11 @@ import { TelegramModule } from './modules/libs/telegram/telegram.module';
 		FollowModule,
 		ChannelModule,
 		NotificationModule,
-		TelegramModule
+		TelegramModule,
+		StripeModule,
+		PlanModule,
+		SubscriptionModule,
+		TransactionModule
 	]
 })
 export class CoreModule {}
