@@ -6,8 +6,10 @@ import { SessionMetadata } from 'src/shared/types/session-metadata.types'
 
 import { AccountDeletionTemplate } from './templates/account-deletion.template'
 import { DeactiveTemplate } from './templates/deactive.template'
+import { EnableTwoFactorTemplate } from './templates/enable-two-factor.template'
 import { PasswordRecoveryTemplate } from './templates/password-recovery.template'
 import { VerificationTemplateProps } from './templates/verification.template'
+import { VerifyChannelTemplate } from './templates/verify-channel.template'
 
 @Injectable()
 export class MailService {
@@ -63,6 +65,22 @@ export class MailService {
 			'Your Kick Account Has Been Permanently Deleted',
 			html
 		)
+	}
+
+	public async sendEnableTwoFactor(email: string) {
+		const domain = this.configService.getOrThrow<string>('ALLOWED_ORIGIN')
+
+		const html = await render(EnableTwoFactorTemplate({ domain }))
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		return this.sendMail(email, 'Enable Two-Factor Authentication', html)
+	}
+
+	public async sendVerifyChannel(email: string, username: string) {
+		const html = await render(VerifyChannelTemplate({ username }))
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		return this.sendMail(email, 'Your Channel Has Been Verified!', html)
 	}
 
 	private sendMail(email: string, subject: string, html: string) {

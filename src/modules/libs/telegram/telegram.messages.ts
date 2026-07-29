@@ -86,5 +86,16 @@ export const TelegramMessagess = {
 			`<b>💵 Price:</b> $${plan.price}/month\n\n` +
 			`🕐 ${date} at ${time}`
 		)
-	}
+	},
+	enableTwoFactor:
+		`🔒 <b>Secure Your Account with Two-Factor Authentication</b>\n\n` +
+		`Adding an extra layer of security to your account helps protect you from unauthorized access.\n\n` +
+		`With 2FA enabled, even if someone gets your password, they won't be able to sign in without a second verification step.\n\n` +
+		`<b>👉 Enable it now:</b>\n` +
+		`<a href="https://kick.com/dashboard/settings">Account Settings → Security</a>`,
+
+	verifyChannel:
+		`✅ <b>Your Channel Has Been Verified!</b>\n\n` +
+		`Congratulations! Your channel is now officially verified. A verified badge will appear next to your channel name, letting your audience know you're the real deal.\n\n` +
+		`🎉 Keep creating great content and growing your community!`
 }
