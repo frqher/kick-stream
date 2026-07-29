@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common'
-import { Cron } from '@nestjs/schedule'
+import { Cron, CronExpression } from '@nestjs/schedule'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 
 import { MailService } from '../libs/mail/mail.service'
 import { StorageService } from '../libs/storage/storage.service'
 import { TelegramService } from '../libs/telegram/telegram.service'
+import { NotificationService } from '../notification/notification.service'
 
 @Injectable()
 export class CronService {
@@ -12,10 +13,11 @@ export class CronService {
 		private readonly prismaService: PrismaService,
 		private readonly mailService: MailService,
 		private readonly storageService: StorageService,
-		private readonly telegramService: TelegramService
+		private readonly telegramService: TelegramService,
+		private readonly notificationService: NotificationService
 	) {}
 
-	@Cron('0 0 * * *')
+	@Cron(CronExpression.EVERY_DAY_AT_1AM)
 	public async deleteDeactivedAccounts() {
 		const sevenDaysAgo = new Date()
 		sevenDaysAgo.setDate(sevenDaysAgo.getDay() - 7)
@@ -67,5 +69,33 @@ export class CronService {
 				}
 			}
 		})
+	}
+
+	@Cron(CronExpression.EVERY_WEEK)
+	public async notifyUsersEnableTworFactor() {
+		const users = await this.prismaService.user.findMany({
+			where: {
+				isDeactivated: false,
+				isTotpEnabled: false
+			},
+			include: {
+				notificationSettings: true
+			}
+		})
+
+		for (const user of users) {
+			await this.mailService.sendEnableTwoFactor(user.email)
+
+			if (user.notificationSettings?.siteNotifications) {
+				await this.notificationService.createEnableTwoFactor(user.id)
+			}
+
+			if (
+				user.notificationSettings?.telegramNotifications &&
+				user.telegramId
+			) {
+				await this.telegramService.sendEnableTwoFactor(user.telegramId)
+			}
+		}
 	}
 }
