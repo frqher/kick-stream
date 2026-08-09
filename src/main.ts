@@ -41,11 +41,12 @@ async function bootstrap() {
 				secure: parseBoolean(
 					config.getOrThrow<string>('SESSION_SECURE')
 				),
-				maxAge: 60 * 60 * 24 * 7 // 7 days
+				maxAge: 1000 * 60 * 60 * 24 * 7
 			},
 			store: new RedisStore({
 				client: redis,
-				prefix: config.getOrThrow<string>('SESSION_FOLDER')
+				prefix: config.getOrThrow<string>('SESSION_FOLDER'),
+				ttl: 60 * 60 * 24 * 7
 			})
 		})
 	)

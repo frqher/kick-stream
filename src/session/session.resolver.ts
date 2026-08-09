@@ -34,13 +34,11 @@ export class SessionResolver {
 		return await this.sessionService.login(req, input, userAgent)
 	}
 
-	@Authorization()
 	@Mutation(() => Boolean, { name: 'logoutUser' })
 	public async logout(@Context() { req }: GqlContext) {
 		return await this.sessionService.logout(req)
 	}
 
-	@Authorization()
 	@Mutation(() => Boolean, { name: 'clearSessionCookie' })
 	public clearSession(@Context() { req }: GqlContext) {
 		return this.sessionService.clearSession(req)

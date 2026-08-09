@@ -9,7 +9,7 @@ interface VerificationTemplateProps {
 
 export function VerificationTemplateProps({domain, token}:VerificationTemplateProps) {
     
-    const verificationLink = `${domain}/account/verify?token=${token}`
+    const verificationLink = `${domain}/auth/verify?token=${token}`
 
     return (
         <Html>
