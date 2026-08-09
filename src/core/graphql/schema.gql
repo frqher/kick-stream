@@ -288,7 +288,7 @@ type SocialLinkModel {
 }
 
 type StreamModel {
-  category: CategoryModel!
+  category: CategoryModel
   categoryId: String!
   chatMessages: [ChatMessageModel!]!
   createdAt: DateTime!

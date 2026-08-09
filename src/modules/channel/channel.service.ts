@@ -16,7 +16,11 @@ export class ChannelService {
 				}
 			},
 			include: {
-				stream: true
+				stream: {
+					include: {
+						category: true
+					}
+				}
 			},
 			take: 7
 		})

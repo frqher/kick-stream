@@ -122,7 +122,7 @@ export class SessionService {
 				label: `${user.email}`,
 				algorithm: 'SHA1',
 				digits: 6,
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 				secret: user.totpSecret
 			})
 
@@ -137,8 +137,7 @@ export class SessionService {
 		const metadata = getSessionMetadata(req, userAgent)
 
 		return {
-			user: await saveSession(req, user, metadata),
-			message: 'Login successful'
+			user: await saveSession(req, user, metadata)
 		}
 	}
 

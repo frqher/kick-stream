@@ -11,7 +11,7 @@ interface PasswordRecoveryTemplateProps {
 
 export function PasswordRecoveryTemplate({domain, token, metadata}:PasswordRecoveryTemplateProps) {
     
-    const resetLink = `${domain}/account/recovery?token=${token}`
+    const resetLink = `${domain}/auth/reset-password?token=${token}`
 
     return (
         <Html>
