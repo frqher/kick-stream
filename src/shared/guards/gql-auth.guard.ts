@@ -28,7 +28,7 @@ export class GqlAuthGuard implements CanActivate {
 				id: request.session.userId
 			}
 		})
-		if (user === null) {
+		if (user === null || user.isDeactivated) {
 			throw new UnauthorizedException('user not authenticated')
 		}
 

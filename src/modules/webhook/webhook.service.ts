@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { TransactionStatus } from '@prisma/client'
 import { PrismaService } from 'src/core/prisma/prisma.service'
@@ -28,14 +28,25 @@ export class WebhookService {
 		)
 
 		if (event.event === 'ingress_started') {
-			console.log('STREAM STARTED:', event.ingressInfo?.url)
-			const stream = await this.prismaService.stream.update({
+			const ingressId = event.ingressInfo?.ingressId
+			if (!ingressId) {
+				throw new BadRequestException('Ingress id is missing')
+			}
+
+			const activated = await this.prismaService.stream.updateMany({
 				where: {
-					ingressId: event.ingressInfo?.ingressId
+					ingressId,
+					isLive: false
 				},
 				data: {
 					isLive: true
-				},
+				}
+			})
+
+			if (activated.count === 0) return
+
+			const stream = await this.prismaService.stream.findUniqueOrThrow({
+				where: { ingressId },
 				include: {
 					user: true
 				}
@@ -101,41 +112,49 @@ export class WebhookService {
 		const session = event.data.object as Stripe.Checkout.Session
 
 		if (event.type === 'checkout.session.completed') {
-			const planId = session.metadata?.planId as string
-			const userId = session.metadata?.userId as string
-			const channelId = session.metadata?.channelId as string
+			const planId = session.metadata?.planId
+			const userId = session.metadata?.userId
+			const channelId = session.metadata?.channelId
+
+			if (!planId || !userId || !channelId) {
+				throw new BadRequestException('Checkout metadata is incomplete')
+			}
 
 			const expiresAt = new Date()
 			expiresAt.setDate(expiresAt.getDate() + 30)
 
 			const sponsorshipSubscription =
-				await this.prismaService.sponsorshipSubscription.create({
-					data: {
-						expiresAt,
-						planId,
-						userId,
-						channelId
-					},
-					include: {
-						plan: true,
-						user: true,
-						channel: {
-							include: {
-								notificationSettings: true
+				await this.prismaService.$transaction(async transaction => {
+					const updated = await transaction.transaction.updateMany({
+						where: {
+							stripeSubscriptionId: session.id,
+							status: TransactionStatus.PENDING
+						},
+						data: { status: TransactionStatus.SUCCESS }
+					})
+
+					if (updated.count === 0) return null
+
+					return transaction.sponsorshipSubscription.create({
+						data: {
+							expiresAt,
+							planId,
+							userId,
+							channelId
+						},
+						include: {
+							plan: true,
+							user: true,
+							channel: {
+								include: {
+									notificationSettings: true
+								}
 							}
 						}
-					}
+					})
 				})
 
-			await this.prismaService.transaction.update({
-				where: {
-					stripeSubscriptionId: session.id,
-					status: TransactionStatus.PENDING
-				},
-				data: {
-					status: TransactionStatus.SUCCESS
-				}
-			})
+			if (!sponsorshipSubscription) return
 
 			if (
 				sponsorshipSubscription.channel?.notificationSettings
@@ -166,7 +185,7 @@ export class WebhookService {
 		}
 
 		if (event.type === 'checkout.session.expired') {
-			await this.prismaService.transaction.update({
+			await this.prismaService.transaction.updateMany({
 				where: {
 					stripeSubscriptionId: session.id,
 					status: TransactionStatus.PENDING
@@ -178,7 +197,7 @@ export class WebhookService {
 		}
 
 		if (event.type === 'checkout.session.async_payment_failed') {
-			await this.prismaService.transaction.update({
+			await this.prismaService.transaction.updateMany({
 				where: {
 					stripeSubscriptionId: session.id,
 					status: TransactionStatus.PENDING
@@ -190,7 +209,7 @@ export class WebhookService {
 		}
 	}
 
-	public constructStripeEvent(payload: any, signature: any) {
+	public constructStripeEvent(payload: string | Buffer, signature: string) {
 		return this.stripeService.webhooks.constructEvent(
 			payload,
 			signature,

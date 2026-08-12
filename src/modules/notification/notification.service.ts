@@ -42,7 +42,8 @@ export class NotificationService {
 			},
 			orderBy: {
 				createdAt: 'desc'
-			}
+			},
+			take: 50
 		})
 
 		return notifications
@@ -52,8 +53,8 @@ export class NotificationService {
 		const notification = await this.prismaService.notification.create({
 			data: {
 				message: `
-					<b className='font-medium'>${channel.displayName}</b> started streaming
-					<a className='inline-block px-2 py-1 rounded' href="/${channel.username}">Watch now</a>
+					<b className='font-medium'>${this.escapeHtml(channel.displayName)}</b> started streaming
+					<a className='inline-block px-2 py-1 rounded' href="/${encodeURIComponent(channel.username)}">Watch now</a>
 				`,
 				type: NotificationType.STREAM_START,
 				user: {
@@ -71,8 +72,8 @@ export class NotificationService {
 		const notification = await this.prismaService.notification.create({
 			data: {
 				message: `
-					<b className='font-medium'>${channel.displayName}</b> started following you
-					<a className='inline-block px-2 py-1 rounded' href="/${channel.username}">Follow</a>
+					<b className='font-medium'>${this.escapeHtml(channel.displayName)}</b> started following you
+					<a className='inline-block px-2 py-1 rounded' href="/${encodeURIComponent(channel.username)}">Follow</a>
 				`,
 				type: NotificationType.NEW_FOLLOWER,
 				user: {
@@ -94,8 +95,8 @@ export class NotificationService {
 		const notification = await this.prismaService.notification.create({
 			data: {
 				message: `
-					<b className='font-medium'>${sponsor.displayName}</b> started sponsoring you
-					<a className='inline-block px-2 py-1 rounded' href="/${sponsor.username}">View subscription</a>
+					<b className='font-medium'>${this.escapeHtml(sponsor.displayName)}</b> started sponsoring you
+					<a className='inline-block px-2 py-1 rounded' href="/${encodeURIComponent(sponsor.username)}">View subscription</a>
 				`,
 				type: NotificationType.NEW_SPONSORSHIP,
 				user: {
@@ -207,5 +208,19 @@ export class NotificationService {
 		})
 
 		return notification
+	}
+
+	private escapeHtml(value: string) {
+		return value.replace(/[&<>'"]/g, character => {
+			const entities: Record<string, string> = {
+				'&': '&amp;',
+				'<': '&lt;',
+				'>': '&gt;',
+				"'": '&#39;',
+				'"': '&quot;'
+			}
+
+			return entities[character]
+		})
 	}
 }

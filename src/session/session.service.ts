@@ -1,17 +1,19 @@
 import {
 	BadRequestException,
 	ConflictException,
+	HttpException,
 	Injectable,
 	NotFoundException,
 	UnauthorizedException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { verify } from 'argon2'
+import { createHash } from 'crypto'
 import type { Request } from 'express'
 import { TOTP } from 'otpauth'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { RedisService } from 'src/core/redis/redis.service'
-import { VerificationService } from 'src/modules/auth/verification/verification.service'
+import { parseBoolean } from 'src/shared/utils/parse-boolean'
 import { getSessionMetadata } from 'src/shared/utils/session-metadata.util'
 import { destroySession, saveSession } from 'src/shared/utils/session.util'
 
@@ -22,8 +24,7 @@ export class SessionService {
 	public constructor(
 		private readonly prismaService: PrismaService,
 		private readonly redisService: RedisService,
-		private readonly configService: ConfigService,
-		private readonly verificationService: VerificationService
+		private readonly configService: ConfigService
 	) {}
 
 	public async findByUser(req: Request) {
@@ -33,27 +34,35 @@ export class SessionService {
 			throw new NotFoundException('No active session found')
 		}
 
-		const keys = await this.redisService.keys('*')
-
 		const userSessions: Record<string, any>[] = []
+		const folder = this.configService.getOrThrow<string>('SESSION_FOLDER')
+		const stream = this.redisService.scanStream({
+			match: `${folder}*`,
+			count: 100
+		})
 
-		if (!keys) {
-			return userSessions
-		}
+		for await (const batch of stream) {
+			const keys = batch as string[]
+			if (keys.length === 0) continue
 
-		for (const key of keys) {
-			const sessionData = await this.redisService.get(key)
-			if (sessionData) {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-				const session = JSON.parse(sessionData)
+			const values = await this.redisService.mget(keys)
+			for (const [index, sessionData] of values.entries()) {
+				if (!sessionData) continue
 
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-				if (session && session.userId === userId) {
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-					userSessions.push({
-						...session,
-						id: key.split(':')[1]
-					})
+				try {
+					const session = JSON.parse(sessionData) as {
+						userId?: string
+						createdAt?: number
+					}
+
+					if (session.userId === userId) {
+						userSessions.push({
+							...session,
+							id: keys[index].slice(folder.length)
+						})
+					}
+				} catch {
+					continue
 				}
 			}
 		}
@@ -86,6 +95,19 @@ export class SessionService {
 
 	public async login(req: Request, input: LoginInput, userAgent: string) {
 		const { login, password, pin } = input
+		const rateLimitKey = this.getLoginRateLimitKey(req, login)
+		const attempts = await this.redisService.incr(rateLimitKey)
+
+		if (attempts === 1) {
+			await this.redisService.expire(rateLimitKey, 15 * 60)
+		}
+
+		if (attempts > 10) {
+			throw new HttpException(
+				'Too many login attempts. Try again later',
+				429
+			)
+		}
 
 		const user = await this.prismaService.user.findFirst({
 			where: {
@@ -96,15 +118,21 @@ export class SessionService {
 			}
 		})
 
-		if (!user) throw new NotFoundException('User not found')
+		if (!user) {
+			throw new UnauthorizedException('Invalid credentials')
+		}
 
 		const isValidPassword = await verify(user.password, password)
 
-		if (!isValidPassword)
-			throw new UnauthorizedException('Incorrect password')
+		if (!isValidPassword) {
+			throw new UnauthorizedException('Invalid credentials')
+		}
+
+		if (user.isDeactivated) {
+			throw new UnauthorizedException('Invalid credentials')
+		}
 
 		if (!user.isEmailVerified) {
-			await this.verificationService.sendVerificationToken(user)
 			throw new BadRequestException(
 				'Your email is not verified. Please verify your email'
 			)
@@ -135,10 +163,19 @@ export class SessionService {
 		}
 
 		const metadata = getSessionMetadata(req, userAgent)
+		await this.redisService.del(rateLimitKey)
 
 		return {
 			user: await saveSession(req, user, metadata)
 		}
+	}
+
+	private getLoginRateLimitKey(req: Request, login: string) {
+		const fingerprint = createHash('sha256')
+			.update(`${req.ip ?? 'unknown'}:${login.trim().toLowerCase()}`)
+			.digest('hex')
+
+		return `rate-limit:login:${fingerprint}`
 	}
 
 	public async logout(req: Request) {
@@ -147,7 +184,17 @@ export class SessionService {
 
 	public clearSession(req: Request) {
 		req.res?.clearCookie(
-			this.configService.getOrThrow<string>('SESSION_NAME')
+			this.configService.getOrThrow<string>('SESSION_NAME'),
+			{
+				domain: this.configService.getOrThrow<string>('SESSION_DOMAIN'),
+				httpOnly: parseBoolean(
+					this.configService.getOrThrow<string>('SESSION_HTTP_ONLY')
+				),
+				sameSite: 'lax',
+				secure: parseBoolean(
+					this.configService.getOrThrow<string>('SESSION_SECURE')
+				)
+			}
 		)
 
 		return true
@@ -160,9 +207,25 @@ export class SessionService {
 			)
 		}
 
-		await this.redisService.del(
-			`${this.configService.getOrThrow<string>('SESSION_FOLDER')}:${id}`
-		)
+		const key = `${this.configService.getOrThrow<string>('SESSION_FOLDER')}${id}`
+		const sessionData = await this.redisService.get(key)
+
+		if (!sessionData) {
+			throw new NotFoundException('Session not found')
+		}
+
+		let session: { userId?: string }
+		try {
+			session = JSON.parse(sessionData) as { userId?: string }
+		} catch {
+			throw new NotFoundException('Session not found')
+		}
+
+		if (!req.session.userId || session.userId !== req.session.userId) {
+			throw new UnauthorizedException('Session does not belong to user')
+		}
+
+		await this.redisService.del(key)
 
 		return true
 	}

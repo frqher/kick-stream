@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
-import { PlanService } from './plan.service';
-import { PlanResolver } from './plan.resolver';
+import { Module } from '@nestjs/common'
+
+import { PlanResolver } from './plan.resolver'
+import { PlanService } from './plan.service'
 
 @Module({
-  providers: [PlanResolver, PlanService],
+	providers: [PlanResolver, PlanService]
 })
 export class PlanModule {}

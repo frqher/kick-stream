@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { Prisma, User } from '@prisma/client'
-import { type FileUpload } from 'graphql-upload/processRequest.js'
-import Upload from 'graphql-upload/Upload.js'
+import { randomUUID } from 'crypto'
+import { type FileUpload } from 'graphql-upload/processRequest.mjs'
 import { AccessToken } from 'livekit-server-sdk'
 import sharp from 'sharp'
 import { PrismaService } from 'src/core/prisma/prisma.service'
@@ -23,9 +27,10 @@ export class StreamService {
 
 	public async findAll(input: FiltersInput = {}) {
 		const { take, skip, searchTerm } = input
+		const normalizedSearchTerm = searchTerm?.trim()
 
-		const whereClause = searchTerm
-			? this.findBySearchTermFilter(searchTerm)
+		const whereClause = normalizedSearchTerm
+			? this.findBySearchTermFilter(normalizedSearchTerm)
 			: undefined
 
 		const streams = await this.prismaService.stream.findMany({
@@ -35,15 +40,14 @@ export class StreamService {
 				user: {
 					isDeactivated: false
 				},
+				isLive: true,
 				...whereClause
 			},
 			include: {
 				user: true,
 				category: true
 			},
-			orderBy: {
-				createdAt: 'desc'
-			}
+			orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
 		})
 
 		return streams
@@ -54,7 +58,8 @@ export class StreamService {
 			where: {
 				user: {
 					isDeactivated: false
-				}
+				},
+				isLive: true
 			}
 		})
 
@@ -68,15 +73,25 @@ export class StreamService {
 
 		const randoms = Array.from(randomIndexes).map(index =>
 			this.prismaService.stream.findFirst({
-				where: { user: { isDeactivated: false } },
+				where: {
+					user: { isDeactivated: false },
+					isLive: true
+				},
 				include: { user: true, category: true },
+				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
 				skip: index
 			})
 		)
 
 		const streams = await Promise.all(randoms)
 
-		return streams
+		return Array.from(
+			new Map(
+				streams
+					.filter(stream => stream !== null)
+					.map(stream => [stream.id, stream])
+			).values()
+		)
 	}
 
 	public async changeInfo(user: User, input: ChangeStreamInfoInput) {
@@ -99,18 +114,16 @@ export class StreamService {
 		return true
 	}
 
-	public async changeThumbnail(user: User, upload: Upload) {
+	public async changeThumbnail(user: User, upload: Promise<FileUpload>) {
 		const stream = await this.findByUserId(user)
 		if (stream?.thumbnailUrl) {
 			await this.storageService.remove(stream?.thumbnailUrl)
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-		const file: FileUpload = await upload.promise
+		const file = await upload
 
 		const chunks: Buffer[] = []
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 		for await (const chunk of file.createReadStream()) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			chunks.push(chunk)
@@ -121,7 +134,6 @@ export class StreamService {
 		const fileName = `/streams/${user.username}.webp`
 
 		const isGif =
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 			file.filename && file.filename.endsWith('.gif') ? true : false
 		const processedBuffer = await sharp(buffer, { animated: isGif })
 			.resize(1280, 720)
@@ -146,54 +158,59 @@ export class StreamService {
 		return true
 	}
 
-	public async generateToken(input: GenerateStreamTokenInput) {
-		const { userId, channelId } = input
+	public async generateToken(
+		sessionUserId: string | undefined,
+		input: GenerateStreamTokenInput
+	) {
+		const { channelId } = input
 
-		let self: { id: string; username: string }
+		const user = sessionUserId
+			? await this.prismaService.user.findUnique({
+					where: { id: sessionUserId },
+					select: { id: true, username: true, isDeactivated: true }
+				})
+			: null
 
-		const user = await this.prismaService.user.findUnique({
-			where: {
-				id: userId
-			}
-		})
+		if (user?.isDeactivated) {
+			throw new BadRequestException('Account is deactivated')
+		}
 
-		if (user) {
-			self = {
-				id: user.id,
-				username: user.username
-			}
-		} else {
-			self = {
-				id: userId,
-				username: `Fake ${Math.floor(Math.random() * 10000)}`
-			}
+		const viewer = user ?? {
+			id: randomUUID(),
+			username: 'Guest'
 		}
 
 		const channel = await this.prismaService.user.findUnique({
 			where: {
 				id: channelId
-			}
+			},
+			include: { stream: true }
 		})
 
-		if (!channel) {
+		if (!channel || channel.isDeactivated) {
 			throw new NotFoundException('Channel not found')
 		}
 
-		const isHost = self.id === channel.id
+		if (!channel.stream?.isLive) {
+			throw new BadRequestException('Channel is not live')
+		}
 
 		const token = new AccessToken(
 			this.configService.getOrThrow<string>('LIVEKIT_API_KEY'),
 			this.configService.getOrThrow<string>('LIVEKIT_API_SECRET'),
 			{
-				identity: isHost ? `Host-${self.id}` : self.id.toString(),
-				name: self.username
+				identity: `viewer-${viewer.id}`,
+				name: viewer.username,
+				ttl: '10m'
 			}
 		)
 
 		token.addGrant({
 			room: channel.id,
 			roomJoin: true,
-			canPublish: false
+			canPublish: false,
+			canPublishData: false,
+			canSubscribe: true
 		})
 
 		return {
@@ -241,9 +258,27 @@ export class StreamService {
 					title: {
 						contains: searchTerm,
 						mode: 'insensitive'
-					},
+					}
+				},
+				{
 					user: {
 						username: {
+							contains: searchTerm,
+							mode: 'insensitive'
+						}
+					}
+				},
+				{
+					user: {
+						displayName: {
+							contains: searchTerm,
+							mode: 'insensitive'
+						}
+					}
+				},
+				{
+					category: {
+						title: {
 							contains: searchTerm,
 							mode: 'insensitive'
 						}

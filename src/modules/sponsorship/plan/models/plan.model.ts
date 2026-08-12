@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql'
 import { SponsorshipPlan } from '@prisma/client'
-import { UserModel } from 'src/modules/auth/account/models/user.model'
+import { PublicUserModel } from 'src/modules/auth/account/models/public-user.model'
 
 @ObjectType()
 export class PlanModel implements SponsorshipPlan {
@@ -16,14 +16,12 @@ export class PlanModel implements SponsorshipPlan {
 	@Field(() => Number)
 	public price: number
 
-	@Field(() => String)
 	public stripeProductId: string
 
-	@Field(() => String)
 	public stripePlanId: string
 
-	@Field(() => UserModel)
-	public channel: UserModel
+	@Field(() => PublicUserModel)
+	public channel: PublicUserModel
 
 	@Field(() => String)
 	public channelId: string

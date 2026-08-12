@@ -1,6 +1,5 @@
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql'
 import { type Notification, NotificationType } from '@prisma/client'
-import { UserModel } from 'src/modules/auth/account/models/user.model'
 
 registerEnumType(NotificationType, {
 	name: 'NotificationType'
@@ -20,11 +19,8 @@ export class NotificationModel implements Notification {
 	@Field(() => Boolean)
 	public isRead: boolean
 
-	@Field(() => UserModel)
-	public user: UserModel
-
-	@Field(() => String)
-	public userId: string
+	@Field(() => String, { nullable: true })
+	public userId: string | null
 
 	@Field(() => Date)
 	public createdAt: Date

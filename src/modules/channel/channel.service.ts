@@ -8,7 +8,12 @@ export class ChannelService {
 	public async findRecommended() {
 		const channels = await this.prismaService.user.findMany({
 			where: {
-				isDeactivated: false
+				isDeactivated: false,
+				stream: {
+					is: {
+						isLive: true
+					}
+				}
 			},
 			orderBy: {
 				followings: {

@@ -21,12 +21,9 @@ export class WebhookController {
 		@Body() body: string,
 		@Headers('Authorization') authorization: string
 	) {
-		console.log('Webhook is called')
 		if (!authorization) {
 			throw new UnauthorizedException('Authorization header is required')
 		}
-
-		console.log('Webhook return')
 
 		return await this.webhookService.receiveWebhookLiveKit(
 			body,

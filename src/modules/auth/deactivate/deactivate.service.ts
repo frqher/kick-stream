@@ -47,17 +47,21 @@ export class DeactivateService {
 			return { message: 'Deactive token has been sent to your email' }
 		}
 
-		await this.validateDeactivateToken(req, pin)
+		await this.validateDeactivateToken(req, user.id, pin)
 
 		return { user }
 	}
 
-	private async validateDeactivateToken(req: Request, token: string) {
+	private async validateDeactivateToken(
+		req: Request,
+		userId: string,
+		token: string
+	) {
 		const existingToken = await this.prismaService.token.findFirst({
 			where: {
 				token,
-
-				type: TokenType.DEACTIVE_ACCOUNT
+				type: TokenType.DEACTIVE_ACCOUNT,
+				userId
 			}
 		})
 
@@ -77,13 +81,9 @@ export class DeactivateService {
 			throw new BadRequestException('Token has expired')
 		}
 
-		if (!existingToken.userId) {
-			throw new BadRequestException('Token is not associated with a user')
-		}
-
 		await this.prismaService.user.update({
 			where: {
-				id: existingToken.userId
+				id: userId
 			},
 			data: {
 				isDeactivated: true,

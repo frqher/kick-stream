@@ -1,7 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common'
+import {
+	ConflictException,
+	Injectable,
+	NotFoundException
+} from '@nestjs/common'
 import { type User } from '@prisma/client'
-import { type FileUpload } from 'graphql-upload/processRequest.js'
-import Upload from 'graphql-upload/Upload.js'
+import { type FileUpload } from 'graphql-upload/processRequest.mjs'
 import sharp from 'sharp'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 import { StorageService } from 'src/modules/libs/storage/storage.service'
@@ -19,17 +22,15 @@ export class ProfileService {
 		private readonly storageService: StorageService
 	) {}
 
-	public async changeAvatar(user: User, upload: Upload) {
+	public async changeAvatar(user: User, upload: Promise<FileUpload>) {
 		if (user.avatar) {
 			await this.storageService.remove(user.avatar)
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-		const file: FileUpload = await upload.promise
+		const file = await upload
 
 		const chunks: Buffer[] = []
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 		for await (const chunk of file.createReadStream()) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			chunks.push(chunk)
@@ -40,7 +41,6 @@ export class ProfileService {
 		const fileName = `/channels/${user.username}.webp`
 
 		const isGif =
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 			file.filename && file.filename.endsWith('.gif') ? true : false
 		const processedBuffer = await sharp(buffer, { animated: isGif })
 			.resize(512, 512)
@@ -156,49 +156,64 @@ export class ProfileService {
 		return true
 	}
 
-	public async reorderSocialLinks(list: SocialLinkOrderInput[]) {
+	public async reorderSocialLinks(user: User, list: SocialLinkOrderInput[]) {
 		if (!list.length) {
-			return
+			return true
 		}
 
-		const updatePromises = list.map(async socialLink => {
+		const uniqueIds = [...new Set(list.map(socialLink => socialLink.id))]
+		const ownedLinks = await this.prismaService.socialLink.count({
+			where: { id: { in: uniqueIds }, userId: user.id }
+		})
+
+		if (ownedLinks !== uniqueIds.length) {
+			throw new NotFoundException('Social link not found')
+		}
+
+		const updatePromises = list.map(socialLink => {
 			return this.prismaService.socialLink.update({
-				where: {
-					id: socialLink.id
-				},
+				where: { id: socialLink.id },
 				data: {
 					position: socialLink.position
 				}
 			})
 		})
 
-		await Promise.all(updatePromises)
+		await this.prismaService.$transaction(updatePromises)
 
 		return true
 	}
 
-	public async updateSocialLink(id: string, input: SocialLinkInput) {
+	public async updateSocialLink(
+		user: User,
+		id: string,
+		input: SocialLinkInput
+	) {
 		const { title, url } = input
 
-		await this.prismaService.socialLink.update({
-			where: {
-				id
-			},
+		const result = await this.prismaService.socialLink.updateMany({
+			where: { id, userId: user.id },
 			data: {
 				title,
 				url
 			}
 		})
 
+		if (result.count === 0) {
+			throw new NotFoundException('Social link not found')
+		}
+
 		return true
 	}
 
-	public async reorderSocialLink(id: string) {
-		await this.prismaService.socialLink.delete({
-			where: {
-				id
-			}
+	public async removeSocialLink(user: User, id: string) {
+		const result = await this.prismaService.socialLink.deleteMany({
+			where: { id, userId: user.id }
 		})
+
+		if (result.count === 0) {
+			throw new NotFoundException('Social link not found')
+		}
 
 		return true
 	}

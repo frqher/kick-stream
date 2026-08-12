@@ -4,7 +4,6 @@ import { NestFactory } from '@nestjs/core'
 import { RedisStore } from 'connect-redis'
 import cookieParser from 'cookie-parser'
 import session from 'express-session'
-import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.js'
 
 import { CoreModule } from './core.module'
 import { RedisService } from './core/redis/redis.service'
@@ -15,14 +14,21 @@ async function bootstrap() {
 
 	const config = app.get(ConfigService)
 	const redis = app.get(RedisService)
+	const { default: graphqlUploadExpress } =
+		await import('graphql-upload/graphqlUploadExpress.mjs')
 
 	app.use(cookieParser(config.getOrThrow<string>('COOKIES_SECRET')))
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-	app.use(config.getOrThrow<string>('GRAPHQL_PREFIX'), graphqlUploadExpress())
+	app.use(
+		config.getOrThrow<string>('GRAPHQL_PREFIX'),
+
+		graphqlUploadExpress({ maxFileSize: 10 * 1024 * 1024, maxFiles: 1 })
+	)
 
 	app.useGlobalPipes(
 		new ValidationPipe({
-			transform: true
+			transform: true,
+			whitelist: true,
+			forbidNonWhitelisted: true
 		})
 	)
 

@@ -4,9 +4,12 @@ import {
 	NotFoundException,
 	UnauthorizedException
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { type User } from '@prisma/client'
 import { hash, verify } from 'argon2'
 import { PrismaService } from 'src/core/prisma/prisma.service'
+import { RedisService } from 'src/core/redis/redis.service'
+import { invalidateUserSessions } from 'src/shared/utils/invalidate-user-sessions.util'
 
 import { VerificationService } from '../verification/verification.service'
 
@@ -18,7 +21,9 @@ import { CreateUserInput } from './input/create-user.input'
 export class AccountService {
 	public constructor(
 		private readonly prismaService: PrismaService,
-		private readonly verificationService: VerificationService
+		private readonly verificationService: VerificationService,
+		private readonly redisService: RedisService,
+		private readonly configService: ConfigService
 	) {}
 
 	public async me(id: string) {
@@ -81,9 +86,22 @@ export class AccountService {
 	}
 
 	public async changeEmail(user: User, input: ChangeEmailInput) {
-		const { email } = input
+		const { email, password } = input
 
-		await this.prismaService.user.update({
+		if (!(await verify(user.password, password))) {
+			throw new UnauthorizedException('Invalid credentials')
+		}
+
+		const emailOwner = await this.prismaService.user.findUnique({
+			where: { email },
+			select: { id: true }
+		})
+
+		if (emailOwner && emailOwner.id !== user.id) {
+			throw new ConflictException('Email already exists')
+		}
+
+		const updatedUser = await this.prismaService.user.update({
 			where: {
 				id: user.id
 			},
@@ -92,6 +110,14 @@ export class AccountService {
 				isEmailVerified: false
 			}
 		})
+
+		await this.verificationService.sendVerificationToken(updatedUser)
+
+		await invalidateUserSessions(
+			this.redisService,
+			this.configService,
+			user.id
+		)
 
 		return true
 	}
@@ -119,6 +145,12 @@ export class AccountService {
 				password: await hash(newPassword)
 			}
 		})
+
+		await invalidateUserSessions(
+			this.redisService,
+			this.configService,
+			user.id
+		)
 
 		return true
 	}
