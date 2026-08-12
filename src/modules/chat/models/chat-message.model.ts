@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql'
 import type { ChatMessage } from '@prisma/client'
-import { UserModel } from 'src/modules/auth/account/models/user.model'
+import { PublicUserModel } from 'src/modules/auth/account/models/public-user.model'
 import { StreamModel } from 'src/modules/stream/models/stream.model'
 
 @ObjectType()
@@ -11,13 +11,12 @@ export class ChatMessageModel implements ChatMessage {
 	@Field(() => String)
 	public text: string
 
-	@Field(() => UserModel)
-	public user: UserModel
+	@Field(() => PublicUserModel)
+	public user: PublicUserModel
 
 	@Field(() => String)
 	public userId: string
 
-	@Field(() => StreamModel)
 	public stream: StreamModel
 
 	@Field(() => String)

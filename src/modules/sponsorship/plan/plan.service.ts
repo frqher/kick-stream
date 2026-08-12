@@ -74,10 +74,11 @@ export class PlanService {
 		return true
 	}
 
-	public async remove(planId: string) {
-		const plan = await this.prismaService.sponsorshipPlan.findUnique({
+	public async remove(user: User, planId: string) {
+		const plan = await this.prismaService.sponsorshipPlan.findFirst({
 			where: {
-				id: planId
+				id: planId,
+				channelId: user.id
 			}
 		})
 

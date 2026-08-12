@@ -13,14 +13,13 @@ export class RawBodyMiddleware implements NestMiddleware {
 			return next(new BadRequestException('Invalid requesrt'))
 		}
 
-		getRawBody(req, { encoding: 'utf-8' })
+		getRawBody(req, { encoding: 'utf-8', limit: '1mb' })
 			.then(rawBody => {
 				req.body = rawBody
 				next()
 			})
-			.catch(err => {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-				throw new BadRequestException('Internal server error', err)
+			.catch(() => {
+				next(new BadRequestException('Invalid request body'))
 			})
 	}
 }

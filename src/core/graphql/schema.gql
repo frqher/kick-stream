@@ -12,7 +12,6 @@ type CategoryModel {
   description: String
   id: ID!
   slug: String!
-  streams: [StreamModel!]!
   thumbnailUrl: String!
   title: String!
   updatedAt: DateTime!
@@ -26,6 +25,7 @@ input ChangeChatSettingsInput {
 
 input ChangeEmailInput {
   email: String!
+  password: String!
 }
 
 input ChangeNotificationSettingsInput {
@@ -57,11 +57,10 @@ input ChangeStreamInfoInput {
 type ChatMessageModel {
   createdAt: DateTime!
   id: ID!
-  stream: StreamModel!
   streamId: String!
   text: String!
   updatedAt: DateTime!
-  user: UserModel!
+  user: PublicUserModel!
   userId: String!
 }
 
@@ -94,7 +93,13 @@ type DeviceModule {
   type: String!
 }
 
+input DisableTotpInput {
+  password: String!
+  pin: String!
+}
+
 input EnableTotpInput {
+  password: String!
   pin: String!
   secret: String!
 }
@@ -107,9 +112,9 @@ input FiltersInput {
 
 type FollowModel {
   createdAt: DateTime!
-  follower: UserModel!
+  follower: PublicUserModel!
   followerId: String!
-  following: UserModel!
+  following: PublicUserModel!
   followingId: String!
   id: ID!
   updatedAt: DateTime!
@@ -117,7 +122,6 @@ type FollowModel {
 
 input GenerateStreamTokenInput {
   channelId: String!
-  userId: String!
 }
 
 type GenerateStreamTokenModel {
@@ -156,7 +160,7 @@ type Mutation {
   createSponsorshipPlan(data: CreatePlanInput!): Boolean!
   createUser(data: CreateUserInput!): Boolean!
   deactivateAccount(data: DeactiveAccountInput!): AuthModel!
-  disableTotp: Boolean!
+  disableTotp(data: DisableTotpInput!): Boolean!
   enableTotp(data: EnableTotpInput!): Boolean!
   followChannel(channelId: String!): Boolean!
   generateStreamToken(data: GenerateStreamTokenInput!): GenerateStreamTokenModel!
@@ -166,9 +170,10 @@ type Mutation {
   newPassword(data: NewPasswordInput!): Boolean!
   removeProfileAvatar: Boolean!
   removeSessionById(id: String!): Boolean!
+  removeSocialLink(id: String!): Boolean!
   removeSponsorshipPlan(planId: String!): Boolean!
   removeStreamThumbnail: Boolean!
-  reorderSocialLink(id: String!): Boolean!
+  reorderSocialLinks(list: [SocialLinkOrderInput!]!): Boolean!
   resetPassword(data: ResetPasswordInput!): Boolean!
   sendChatMessage(data: SendMessageInput!): ChatMessageModel!
   unfollowChannel(channelId: String!): Boolean!
@@ -189,8 +194,7 @@ type NotificationModel {
   message: String!
   type: NotificationType!
   updatedAt: DateTime!
-  user: UserModel!
-  userId: String!
+  userId: String
 }
 
 type NotificationSettingsModel {
@@ -199,7 +203,6 @@ type NotificationSettingsModel {
   siteNotifications: Boolean!
   telegramNotifications: Boolean!
   updatedAt: DateTime!
-  user: UserModel!
   userId: String!
 }
 
@@ -212,24 +215,41 @@ enum NotificationType {
 }
 
 type PlanModel {
-  channel: UserModel!
+  channel: PublicUserModel!
   channelId: String!
   createdAt: DateTime!
   description: String
   id: ID!
   price: Float!
-  stripePlanId: String!
-  stripeProductId: String!
   title: String!
   updatedAt: DateTime!
+}
+
+type PublicChannelModel {
+  avatar: String
+  bio: String
+  displayName: String!
+  id: ID!
+  isVerified: Boolean!
+  socialLinks: [SocialLinkModel!]!
+  stream: StreamModel
+  username: String!
+}
+
+type PublicUserModel {
+  avatar: String
+  bio: String
+  displayName: String!
+  id: ID!
+  isVerified: Boolean!
+  username: String!
 }
 
 type Query {
   findAllCategories: [CategoryModel!]!
   findAllStreams(filters: FiltersInput!): [StreamModel!]!
-  findAllUsers: [UserModel!]!
   findCategoryBySlug(slug: String!): CategoryModel!
-  findChannelByUsername(username: String!): UserModel!
+  findChannelByUsername(username: String!): PublicChannelModel!
   findChatMessagesByStream(streamId: String!): [ChatMessageModel!]!
   findCurrentSession: SessionModel!
   findMyFollowers: [FollowModel!]!
@@ -241,13 +261,33 @@ type Query {
   findProfile: UserModel!
   findRandomCategories: [CategoryModel!]!
   findRandomStreams: [StreamModel!]!
-  findRecommendedChannels: [UserModel!]!
+  findRecommendedChannels: [RecommendedChannelModel!]!
   findSessionsByUser: [SessionModel!]!
   findSocialLinks: [SocialLinkModel!]!
   findSponsorsByChannel(channelId: String!): [SubscriptionModel!]!
   findUnreadNotificationsCount: Float!
   followersCountByChannel(channelId: String!): Float!
   generateTotpSecret: TotpModel!
+}
+
+type RecommendedChannelCategoryModel {
+  slug: String!
+  title: String!
+}
+
+type RecommendedChannelModel {
+  avatar: String
+  displayName: String!
+  id: ID!
+  isVerified: Boolean!
+  stream: RecommendedChannelStreamModel!
+  username: String!
+}
+
+type RecommendedChannelStreamModel {
+  category: RecommendedChannelCategoryModel
+  isLive: Boolean!
+  title: String!
 }
 
 input ResetPasswordInput {
@@ -287,23 +327,24 @@ type SocialLinkModel {
   userId: String
 }
 
+input SocialLinkOrderInput {
+  id: String!
+  position: Float!
+}
+
 type StreamModel {
   category: CategoryModel
-  categoryId: String!
-  chatMessages: [ChatMessageModel!]!
+  categoryId: String
   createdAt: DateTime!
   id: ID!
-  ingressId: String
   isChatEnabled: Boolean!
   isChatFollowersOnly: Boolean!
   isChatSubscribersOnly: Boolean!
   isLive: Boolean!
-  serverUrl: String
-  streamKey: String
   thumbnailUrl: String
   title: String!
   updatedAt: DateTime!
-  user: UserModel!
+  user: PublicUserModel!
   userId: String!
 }
 
@@ -312,7 +353,7 @@ type Subscription {
 }
 
 type SubscriptionModel {
-  channel: UserModel!
+  channel: PublicUserModel!
   channelId: String!
   createdAt: DateTime!
   expiresAt: DateTime!
@@ -320,7 +361,7 @@ type SubscriptionModel {
   plan: PlanModel!
   planId: String!
   updatedAt: DateTime!
-  user: UserModel!
+  user: PublicUserModel!
   userId: String!
 }
 
@@ -335,10 +376,8 @@ type TransactionModel {
   currency: String!
   id: ID!
   status: String!
-  stripeSubscriptionId: String!
   updatedAt: DateTime!
-  user: UserModel!
-  userId: String!
+  userId: String
 }
 
 """The `Upload` scalar type represents a file upload."""
@@ -360,11 +399,8 @@ type UserModel {
   isVerified: Boolean!
   notificationSettings: NotificationSettingsModel
   notifications: [NotificationModel!]
-  password: String!
   socialLinks: [SocialLinkModel!]!
   stream: StreamModel
-  telegramId: String
-  totpSecret: String
   updatedAt: DateTime!
   username: String!
 }

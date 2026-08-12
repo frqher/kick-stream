@@ -1,9 +1,10 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql'
 import { type User } from '@prisma/client'
-import GraphQLUpload from 'graphql-upload/GraphQLUpload.js'
-import { type FileUpload } from 'graphql-upload/processRequest.js'
+import { type FileUpload } from 'graphql-upload/processRequest.mjs'
+import { type GqlContext } from 'src/session/inputs/gql-context.types'
 import { Authorization } from 'src/shared/decorators/auth.decorator'
 import { Authorized } from 'src/shared/decorators/authorized.decorator'
+import { GraphQLUpload } from 'src/shared/graphql/upload.scalar'
 import { FileValidationPipe } from 'src/shared/pipes/file-validation.pipe'
 
 import { ChangeStreamInfoInput } from './inputs/change-stream.info.input'
@@ -40,7 +41,7 @@ export class StreamResolver {
 	@Mutation(() => Boolean, { name: 'changeStreamThumbnail' })
 	public async changeThumbnail(
 		@Authorized() user: User,
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
 		@Args('thumbnail', { type: () => GraphQLUpload }, FileValidationPipe)
 		thumbnail: Promise<FileUpload>
 	) {
@@ -54,7 +55,10 @@ export class StreamResolver {
 	}
 
 	@Mutation(() => GenerateStreamTokenModel, { name: 'generateStreamToken' })
-	public async generateToken(@Args('data') input: GenerateStreamTokenInput) {
-		return this.streamService.generateToken(input)
+	public async generateToken(
+		@Context() { req }: GqlContext,
+		@Args('data') input: GenerateStreamTokenInput
+	) {
+		return this.streamService.generateToken(req.session.userId, input)
 	}
 }

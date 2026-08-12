@@ -1,20 +1,20 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql'
 import type { Follow } from '@prisma/client'
-import { UserModel } from 'src/modules/auth/account/models/user.model'
+import { PublicUserModel } from 'src/modules/auth/account/models/public-user.model'
 
 @ObjectType()
 export class FollowModel implements Follow {
 	@Field(() => ID)
 	public id: string
 
-	@Field(() => UserModel)
-	public follower: UserModel
+	@Field(() => PublicUserModel)
+	public follower: PublicUserModel
 
 	@Field(() => String)
 	public followerId: string
 
-	@Field(() => UserModel)
-	public following: UserModel
+	@Field(() => PublicUserModel)
+	public following: PublicUserModel
 
 	@Field(() => String)
 	public followingId: string

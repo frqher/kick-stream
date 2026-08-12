@@ -1,24 +1,24 @@
 import { Field, InputType } from '@nestjs/graphql'
 import {
-	IsEmail,
 	IsNotEmpty,
 	IsString,
+	Length,
 	MaxLength,
 	MinLength
 } from 'class-validator'
 
 @InputType()
-export class ChangeEmailInput {
-	@Field()
-	@IsString()
-	@IsNotEmpty()
-	@IsEmail()
-	public email: string
-
-	@Field()
+export class DisableTotpInput {
+	@Field(() => String)
 	@IsString()
 	@IsNotEmpty()
 	@MinLength(8)
 	@MaxLength(32)
 	public password: string
+
+	@Field(() => String)
+	@IsString()
+	@IsNotEmpty()
+	@Length(6, 6)
+	public pin: string
 }

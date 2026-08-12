@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql'
 import { type SponsorshipSubscription } from '@prisma/client'
-import { UserModel } from 'src/modules/auth/account/models/user.model'
+import { PublicUserModel } from 'src/modules/auth/account/models/public-user.model'
 
 import { PlanModel } from '../../plan/models/plan.model'
 
@@ -21,14 +21,14 @@ export class SubscriptionModel implements SponsorshipSubscription {
 	@Field(() => String)
 	public channelId: string
 
-	@Field(() => UserModel)
-	public channel: UserModel
+	@Field(() => PublicUserModel)
+	public channel: PublicUserModel
 
 	@Field(() => Date)
 	public expiresAt: Date
 
-	@Field(() => UserModel)
-	public user: UserModel
+	@Field(() => PublicUserModel)
+	public user: PublicUserModel
 
 	@Field(() => Date)
 	public createdAt: Date

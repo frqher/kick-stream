@@ -1,6 +1,5 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql'
 import { type Transaction, TransactionStatus } from '@prisma/client'
-import { UserModel } from 'src/modules/auth/account/models/user.model'
 
 registerEnumType(TransactionStatus, {
 	name: 'TransactionStatus'
@@ -20,14 +19,10 @@ export class TransactionModel implements Transaction {
 	@Field(() => String)
 	public status: TransactionStatus
 
-	@Field(() => String)
-	public stripeSubscriptionId: string
+	public stripeSubscriptionId: string | null
 
-	@Field(() => String)
-	public userId: string
-
-	@Field(() => UserModel)
-	public user: UserModel
+	@Field(() => String, { nullable: true })
+	public userId: string | null
 
 	@Field(() => Date)
 	public createdAt: Date

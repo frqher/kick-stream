@@ -18,14 +18,13 @@ export class ChatService {
 			where: {
 				streamId
 			},
-			orderBy: {
-				createdAt: 'asc'
-			},
+			orderBy: { createdAt: 'desc' },
+			take: 100,
 			include: {
 				user: true
 			}
 		})
-		return messages
+		return messages.reverse()
 	}
 
 	public async sendMessage(userId: string, input: SendMessageInput) {
@@ -45,6 +44,40 @@ export class ChatService {
 			throw new BadRequestException(
 				'You can only send messages in a live stream'
 			)
+		}
+
+		if (!stream.isChatEnabled) {
+			throw new BadRequestException('Chat is disabled')
+		}
+
+		if (stream.isChatFollowersOnly) {
+			const followsChannel = await this.prismaService.follow.findUnique({
+				where: {
+					followerId_followingId: {
+						followerId: userId,
+						followingId: stream.userId
+					}
+				}
+			})
+
+			if (!followsChannel && userId !== stream.userId) {
+				throw new BadRequestException('Chat is for followers only')
+			}
+		}
+
+		if (stream.isChatSubscribersOnly) {
+			const subscription =
+				await this.prismaService.sponsorshipSubscription.findFirst({
+					where: {
+						userId,
+						channelId: stream.userId,
+						expiresAt: { gt: new Date() }
+					}
+				})
+
+			if (!subscription && userId !== stream.userId) {
+				throw new BadRequestException('Chat is for subscribers only')
+			}
 		}
 
 		const message = await this.prismaService.chatMessage.create({

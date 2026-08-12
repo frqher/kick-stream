@@ -15,7 +15,6 @@ export class UserModel implements User {
 	@Field(() => String)
 	public email: string
 
-	@Field(() => String)
 	public password: string
 
 	@Field(() => String)
@@ -30,7 +29,6 @@ export class UserModel implements User {
 	@Field(() => String, { nullable: true })
 	public bio: string
 
-	@Field(() => String, { nullable: true })
 	public telegramId: string
 
 	@Field(() => Boolean)
@@ -42,7 +40,6 @@ export class UserModel implements User {
 	@Field(() => Boolean)
 	public isTotpEnabled: boolean
 
-	@Field(() => String, { nullable: true })
 	public totpSecret: string
 
 	@Field(() => Boolean)

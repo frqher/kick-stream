@@ -7,63 +7,29 @@ export class CategoryService {
 
 	public async findAll() {
 		const categories = await this.prismaService.category.findMany({
-			orderBy: {
-				createdAt: 'desc'
-			},
-			include: {
-				streams: {
-					include: {
-						user: true,
-						category: true
-					}
-				}
-			}
+			orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
 		})
 		return categories
 	}
 
 	public async findRandom() {
-		const total = await this.prismaService.category.count()
+		const categories = await this.prismaService.category.findMany()
 
-		const randomIndexes = new Set<number>()
-
-		while (randomIndexes.size < 4 && randomIndexes.size < total) {
-			const randomIndex = Math.floor(Math.random() * total)
-
-			randomIndexes.add(randomIndex)
+		for (let index = categories.length - 1; index > 0; index--) {
+			const randomIndex = Math.floor(Math.random() * (index + 1))
+			;[categories[index], categories[randomIndex]] = [
+				categories[randomIndex],
+				categories[index]
+			]
 		}
 
-		const randoms = Array.from(randomIndexes).map(index =>
-			this.prismaService.category.findFirst({
-				include: {
-					streams: {
-						include: {
-							user: true,
-							category: true
-						}
-					}
-				},
-				skip: index
-			})
-		)
-
-		const categories = await Promise.all(randoms)
-
-		return categories
+		return categories.slice(0, 10)
 	}
 
 	public async findBySlug(slug: string) {
 		const category = await this.prismaService.category.findUnique({
 			where: {
 				slug
-			},
-			include: {
-				streams: {
-					include: {
-						user: true,
-						category: true
-					}
-				}
 			}
 		})
 

@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { type User } from '@prisma/client'
+import { verify } from 'argon2'
 import { randomBytes } from 'crypto'
 import { encode } from 'hi-base32'
 import { TOTP } from 'otpauth'
 import * as QRCode from 'qrcode'
 import { PrismaService } from 'src/core/prisma/prisma.service'
 
+import { DisableTotpInput } from './inputs/disable-totp.input'
 import { EnableTotpInput } from './inputs/enable-totp.input'
 
 @Injectable()
@@ -36,7 +38,11 @@ export class TotpService {
 	}
 
 	public async enable(user: User, input: EnableTotpInput) {
-		const { secret, pin } = input
+		const { password, secret, pin } = input
+
+		if (!(await verify(user.password, password))) {
+			throw new BadRequestException('Invalid credentials')
+		}
 
 		const totp = new TOTP({
 			issuer: 'KickStream',
@@ -64,7 +70,29 @@ export class TotpService {
 		return true
 	}
 
-	public async disable(user: User) {
+	public async disable(user: User, input: DisableTotpInput) {
+		if (!user.isTotpEnabled || !user.totpSecret) {
+			throw new BadRequestException(
+				'Two-factor authentication is not enabled'
+			)
+		}
+
+		if (!(await verify(user.password, input.password))) {
+			throw new BadRequestException('Invalid credentials')
+		}
+
+		const totp = new TOTP({
+			issuer: 'KickStream',
+			label: `${user.email}`,
+			algorithm: 'SHA1',
+			digits: 6,
+			secret: user.totpSecret
+		})
+
+		if (totp.validate({ token: input.pin }) === null) {
+			throw new BadRequestException('Invalid code')
+		}
+
 		await this.prismaService.user.update({
 			where: {
 				id: user.id

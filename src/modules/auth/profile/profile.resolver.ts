@@ -1,9 +1,9 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 import { type User } from '@prisma/client'
-import GraphQLUpload from 'graphql-upload/GraphQLUpload.js'
-import { type FileUpload } from 'graphql-upload/processRequest.js'
+import { type FileUpload } from 'graphql-upload/processRequest.mjs'
 import { Authorization } from 'src/shared/decorators/auth.decorator'
 import { Authorized } from 'src/shared/decorators/authorized.decorator'
+import { GraphQLUpload } from 'src/shared/graphql/upload.scalar'
 import { FileValidationPipe } from 'src/shared/pipes/file-validation.pipe'
 
 import { ChangeProfileInfoInput } from './inputs/change-profile-info.input'
@@ -23,7 +23,7 @@ export class ProfileResolver {
 	public async changeAvatar(
 		@Authorized()
 		user: User,
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
 		@Args('avatar', { type: () => GraphQLUpload }, FileValidationPipe)
 		avatar: Promise<FileUpload>
 	) {
@@ -61,26 +61,31 @@ export class ProfileResolver {
 	}
 
 	@Authorization()
-	@Mutation(() => Boolean, { name: 'updateSocialLink' })
+	@Mutation(() => Boolean, { name: 'reorderSocialLinks' })
 	public async reorderSocialLinks(
+		@Authorized() user: User,
 		@Args('list', { type: () => [SocialLinkOrderInput] })
 		input: SocialLinkOrderInput[]
 	) {
-		return this.profileService.reorderSocialLinks(input)
+		return this.profileService.reorderSocialLinks(user, input)
 	}
 
 	@Authorization()
 	@Mutation(() => Boolean, { name: 'updateSocialLink' })
 	public async updateSocialLink(
+		@Authorized() user: User,
 		@Args('id') id: string,
 		@Args('data') input: SocialLinkInput
 	) {
-		return this.profileService.updateSocialLink(id, input)
+		return this.profileService.updateSocialLink(user, id, input)
 	}
 
 	@Authorization()
-	@Mutation(() => Boolean, { name: 'reorderSocialLink' })
-	public async reorderSocialLink(@Args('id') id: string) {
-		return this.profileService.reorderSocialLink(id)
+	@Mutation(() => Boolean, { name: 'removeSocialLink' })
+	public async removeSocialLink(
+		@Authorized() user: User,
+		@Args('id') id: string
+	) {
+		return this.profileService.removeSocialLink(user, id)
 	}
 }

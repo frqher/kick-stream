@@ -6,10 +6,5 @@ export class GenerateStreamTokenInput {
 	@Field(() => String)
 	@IsString()
 	@IsNotEmpty()
-	public userId: string
-
-	@Field(() => String)
-	@IsString()
-	@IsNotEmpty()
 	public channelId: string
 }

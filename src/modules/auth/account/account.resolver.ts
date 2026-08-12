@@ -19,11 +19,6 @@ export class AccountResolver {
 		return await this.accountService.me(id)
 	}
 
-	@Query(() => [UserModel], { name: 'findAllUsers' })
-	public async findAll() {
-		return await this.accountService.findAll()
-	}
-
 	@Mutation(() => Boolean, { name: 'createUser' })
 	public async create(@Args('data') input: CreateUserInput) {
 		return await this.accountService.create(input)

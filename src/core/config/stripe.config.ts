@@ -7,7 +7,7 @@ export function getStripeConfig(
 	return {
 		apiKey: configService.getOrThrow<string>('STRIPE_SECRET_KEY'),
 		config: {
-			apiVersion: '2026-06-24.dahlia'
+			apiVersion: '2026-07-29.dahlia'
 		}
 	}
 }

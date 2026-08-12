@@ -96,10 +96,10 @@ export class FollowService {
 
 		if (
 			follow.following.notificationSettings?.telegramNotifications &&
-			follow.follower.telegramId
+			follow.following.telegramId
 		) {
 			await this.telegramService.sendNewFollowing(
-				follow.follower.telegramId,
+				follow.following.telegramId,
 				follow.follower
 			)
 		}

@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql'
 import type { Stream } from '@prisma/client'
-import { UserModel } from 'src/modules/auth/account/models/user.model'
+import { PublicUserModel } from 'src/modules/auth/account/models/public-user.model'
 import { CategoryModel } from 'src/modules/category/models/category.model'
 import { ChatMessageModel } from 'src/modules/chat/models/chat-message.model'
 
@@ -15,13 +15,10 @@ export class StreamModel implements Stream {
 	@Field(() => String, { nullable: true })
 	public thumbnailUrl: string
 
-	@Field(() => String, { nullable: true })
 	public ingressId: string
 
-	@Field(() => String, { nullable: true })
 	public serverUrl: string
 
-	@Field(() => String, { nullable: true })
 	public streamKey: string
 
 	@Field(() => Boolean)
@@ -36,8 +33,8 @@ export class StreamModel implements Stream {
 	@Field(() => Boolean)
 	public isChatSubscribersOnly: boolean
 
-	@Field(() => UserModel)
-	public user: UserModel
+	@Field(() => PublicUserModel)
+	public user: PublicUserModel
 
 	@Field(() => String)
 	public userId: string
@@ -45,11 +42,10 @@ export class StreamModel implements Stream {
 	@Field(() => CategoryModel, { nullable: true })
 	public category: CategoryModel
 
-	@Field(() => [ChatMessageModel])
 	public chatMessages: ChatMessageModel[]
 
-	@Field(() => String)
-	public categoryId: string
+	@Field(() => String, { nullable: true })
+	public categoryId: string | null
 
 	@Field(() => Date)
 	public createdAt: Date

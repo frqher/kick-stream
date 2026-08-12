@@ -28,7 +28,10 @@ export class PlanResolver {
 
 	@Authorization()
 	@Mutation(() => Boolean, { name: 'removeSponsorshipPlan' })
-	public async remove(@Args('planId') planId: string) {
-		return this.planService.remove(planId)
+	public async remove(
+		@Authorized() user: User,
+		@Args('planId') planId: string
+	) {
+		return this.planService.remove(user, planId)
 	}
 }
